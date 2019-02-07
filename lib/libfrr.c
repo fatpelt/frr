@@ -43,6 +43,8 @@ DEFINE_HOOK(frr_late_init, (struct thread_master * tm), (tm))
 DEFINE_KOOH(frr_early_fini, (), ())
 DEFINE_KOOH(frr_fini, (), ())
 
+DEFINE_HOOK(zmqw_register_notifications, (), ());
+
 const char frr_sysconfdir[] = SYSCONFDIR;
 const char frr_vtydir[] = DAEMON_VTY_DIR;
 #ifdef HAVE_SQLITE3

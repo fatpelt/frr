@@ -123,6 +123,7 @@ include zebra/subdir.am
 include watchfrr/subdir.am
 include qpb/subdir.am
 include fpm/subdir.am
+include zmqw/subdir.am
 include tools/subdir.am
 include debianpkg/subdir.am
 include solaris/subdir.am
@@ -201,6 +202,7 @@ EXTRA_DIST += \
 	doc/user/Makefile \
 	eigrpd/Makefile \
 	fpm/Makefile \
+	zmqw/Makefile \
 	isisd/Makefile \
 	ldpd/Makefile \
 	lib/Makefile \

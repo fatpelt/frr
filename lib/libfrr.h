@@ -141,6 +141,8 @@ extern void frr_early_fini(void);
 DECLARE_KOOH(frr_fini, (), ())
 extern void frr_fini(void);
 
+DECLARE_HOOK(zmqw_register_notifications, (), ())
+
 extern char config_default[512];
 extern char frr_zclientpath[256];
 extern const char frr_sysconfdir[];
