@@ -156,6 +156,11 @@ extern char frr_protonameinst[];
 
 extern bool debug_memstats_at_exit;
 
+DECLARE_HOOK(zmqw_send_notification,
+	     (void *buf, size_t buflen),
+	     (buf, buflen))
+void zmqw_send_wrapper(void *buf, size_t buflen);
+
 #ifdef __cplusplus
 }
 #endif

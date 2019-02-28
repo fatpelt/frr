@@ -43,6 +43,10 @@ DEFINE_HOOK(frr_late_init, (struct thread_master * tm), (tm))
 DEFINE_KOOH(frr_early_fini, (), ())
 DEFINE_KOOH(frr_fini, (), ())
 
+DEFINE_HOOK(zmqw_send_notification,
+             (void *buf, size_t buflen),
+             (buf, buflen))
+
 const char frr_sysconfdir[] = SYSCONFDIR;
 const char frr_vtydir[] = DAEMON_VTY_DIR;
 #ifdef HAVE_SQLITE3
@@ -1061,6 +1065,11 @@ void frr_fini(void)
 		log_memstats(fp, di->name);
 		fclose(fp);
 	}
+}
+
+void zmqw_send_wrapper(void *buf, size_t buflen)
+{
+	hook_call(zmqw_send_notification, buf, buflen);
 }
 
 #ifdef INTERP
