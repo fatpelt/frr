@@ -33,12 +33,23 @@
 #include "pim_zebra.h"
 #include "pim_oil.h"
 
+DEFINE_HOOK(pimd_igmpv3_add,
+	    (struct igmp_group *group, struct in_addr src_addr),
+	    (group, src_addr));
+DEFINE_HOOK(pimd_igmpv3_del,
+	    (struct igmp_group *group, struct in_addr src_addr),
+	    (group, src_addr));
+
 static void group_retransmit_timer_on(struct igmp_group *group);
 static long igmp_group_timer_remain_msec(struct igmp_group *group);
 static long igmp_source_timer_remain_msec(struct igmp_source *source);
 static void group_query_send(struct igmp_group *group);
 static void source_query_send_by_flag(struct igmp_group *group,
 				      int num_sources_tosend);
+
+static int _zmqw_pimd_igmpv3(const char *dir, struct igmp_group *group, struct in_addr src_addr);
+static int zmqw_pimd_igmpv3_add(struct igmp_group *group, struct in_addr src_addr);
+static int zmqw_pimd_igmpv3_del(struct igmp_group *group, struct in_addr src_addr);
 
 static void on_trace(const char *label, struct interface *ifp,
 		     struct in_addr from, struct in_addr group_addr,
@@ -367,6 +378,8 @@ void igmp_source_delete(struct igmp_source *source)
 	source_timer_off(group, source);
 	igmp_source_forward_stop(source);
 
+	hook_call(pimd_igmpv3_del, group, source->source_addr);
+
 	/* sanity check that forwarding has been disabled */
 	if (IGMP_SOURCE_TEST_FORWARDING(source->source_flags)) {
 		char group_str[INET_ADDRSTRLEN];
@@ -471,6 +484,8 @@ struct igmp_source *source_new(struct igmp_group *group,
 
 	/* Any source (*,G) is forwarded only if mode is EXCLUDE {empty} */
 	igmp_anysource_forward_stop(group);
+
+	hook_call(pimd_igmpv3_add, group, src_addr);
 
 	return src;
 }
@@ -2025,4 +2040,35 @@ int igmp_v3_recv_report(struct igmp_sock *igmp, struct in_addr from,
 	} /* for (group records) */
 
 	return 0;
+}
+
+static int _zmqw_pimd_igmpv3(const char *dir, struct igmp_group *group, struct in_addr src_addr)
+{
+	char g[16], s[16];
+	struct json_object *out = json_object_new_object();
+	char *jsonOut;
+
+	inet_ntop(AF_INET, &group->group_addr.s_addr, g, 15);
+	inet_ntop(AF_INET, &src_addr, s, 15);
+
+	json_object_string_add(out, "action", dir);
+	json_object_string_add(out, "group", g);
+	json_object_string_add(out, "source", s);
+
+	jsonOut = XSTRDUP(MTYPE_TMP, json_object_to_json_string_ext(
+					     out, JSON_C_TO_STRING_PRETTY));
+	zmqw_send_wrapper(jsonOut, strlen(jsonOut));
+	XFREE(MTYPE_TMP, jsonOut);
+
+	return 0;
+}
+
+static int zmqw_pimd_igmpv3_add(struct igmp_group *group, struct in_addr src_addr)
+{
+	return _zmqw_pimd_igmpv3("add", group, src_addr);
+}
+
+static int zmqw_pimd_igmpv3_del(struct igmp_group *group, struct in_addr src_addr)
+{
+	return _zmqw_pimd_igmpv3("del", group, src_addr);
 }
